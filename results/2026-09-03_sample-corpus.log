@@ -1,0 +1,33 @@
+llm provider: GeminiProvider | embedding provider: GeminiEmbeddingProvider | reranker: GeminiReranker
+
+## Retrieval eval (Recall@K, MRR over gold question set)
+
+mode          | recall@1 | recall@3 | recall@5 | mrr 
+-----------------------------------------------------
+bm25          | 0.88     | 1.00     | 1.00     | 0.92
+dense         | 0.88     | 1.00     | 1.00     | 0.94
+hybrid        | 1.00     | 1.00     | 1.00     | 1.00
+hybrid+rerank | 1.00     | 1.00     | 1.00     | 1.00
+
+## Citation eval (claim-level; bm25 vs hybrid vs hybrid+rerank, to keep free-tier call volume sane — dense showed near-identical retrieval to bm25 above so it's skipped here)
+
+mode          | citation_precision | citation_completeness | unsupported_rate
+-----------------------------------------------------------------------------
+bm25          | 1.00               | 1.00                  | 0.00            
+hybrid        | 1.00               | 1.00                  | 0.00            
+hybrid+rerank | 1.00               | 1.00                  | 0.00            
+
+## Naive LLM (no retrieval) vs RAG — same 3 metrics, includes 3 unanswerable questions the corpus can't actually answer
+
+condition                | keyword_recall | citation_availability | hallucination_rate
+--------------------------------------------------------------------------------------
+naive_llm (no retrieval) | 0.75           | 0.00                  | 0.00              
+hybrid_rag               | 1.00           | 1.00                  | 0.67              
+hybrid_rag+rerank        | 1.00           | 1.00                  | 0.33              
+
+(keyword_recall: does the answer mention the expected key terms, over the 8 answerable questions. citation_availability: fraction of claims backed by a real, checkable source — naive_llm can never have this by construction. hallucination_rate: fraction of the 3 unanswerable questions where the system asserted a confident, 'supported' answer instead of correctly having no evidence / abstaining.)
+
+## Observability (from this run's traces)
+
+investigations traced: 92 | total tokens: 71830 | total llm calls: 244 | avg investigation latency: 12118ms
+(raw traces persisted at ~/.citefyme/traces.jsonl)

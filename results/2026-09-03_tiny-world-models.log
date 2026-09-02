@@ -1,0 +1,93 @@
+# Topic: Tiny / efficient world models  (tiny-world-models)
+llm: GeminiProvider | embeddings: GeminiEmbeddingProvider | reranker: GeminiReranker
+note: arXiv has no paper literally titled 'Tiny World Model'; this is the tiny/compact/efficient learned-world-model cluster.
+
+## Corpus: 20 arXiv papers, 92 chunks (abstracts, 2022-2026)
+
+  2026  arxiv_network_efficient_world_model_to     5c  Network-Efficient World Model Token Streaming
+  2026  arxiv_distilling_game_code_world_model     5c  Distilling Game Code World Model Generation into Lightweight Large
+  2026  arxiv_emotion_conditioned_short_horizo     6c  Emotion-Conditioned Short-Horizon Human Pose Forecasting with a Li
+  2026  arxiv_learning_task_sufficient_world_m     4c  Learning Task-Sufficient World Models by Synergizing Agentic Explo
+  2026  arxiv_mixture_of_world_models_scaling_     4c  Mixture-of-World Models: Scaling Multi-Task Reinforcement Learning
+  2026  arxiv_tasksense_focusing_on_what_matte     6c  TaskSense: Focusing on What Matters in World Models
+  2026  arxiv_r2_dreamer_redundancy_reduced_wo     4c  R2-Dreamer: Redundancy-Reduced World Models without Decoders or Au
+  2026  arxiv_discrete_world_models_via_regula     4c  Discrete World Models via Regularization
+  2025  arxiv_enhancing_physical_consistency_i     3c  Enhancing Physical Consistency in Lightweight World Models
+  2025  arxiv_disentangled_world_models_learni     5c  Disentangled World Models: Learning to Transfer Semantic Knowledge
+  2025  arxiv_yolo_iod_towards_real_time_incre     5c  YOLO-IOD: Towards Real Time Incremental Object Detection
+  2025  arxiv_kan_dreamer_benchmarking_kolmogo     4c  KAN-Dreamer: Benchmarking Kolmogorov-Arnold Networks as Function A
+  2025  arxiv_dreampolicy_a_unified_world_mode     5c  DreamPolicy: A Unified World-model Policy for Scalable Humanoid Lo
+  2025  arxiv_learning_interactive_world_model     4c  Learning Interactive World Model for Object-Centric Reinforcement 
+  2025  arxiv_in_context_reinforcement_learnin     5c  In-Context Reinforcement Learning via Communicative World Models
+  2025  arxiv_next_latent_prediction_transform     5c  Next-Latent Prediction Transformers Learn Compact World Models
+  2023  arxiv_twist_teacher_student_world_mode     5c  TWIST: Teacher-Student World Model Distillation for Efficient Sim-
+  2023  arxiv_harmonydream_task_harmonization_     5c  HarmonyDream: Task Harmonization Inside World Models
+  2023  arxiv_learning_world_models_with_ident     4c  Learning World Models with Identifiable Factorization
+  2022  arxiv_transformers_are_sample_efficien     4c  Transformers are Sample-Efficient World Models
+
+## Headline investigation
+
+# Investigation: How do small, efficient world models stay accurate, and what do they give up compared to large ones?
+
+🟡 [partial] Small world models stay accurate by incorporating physics-informed methods (such as the PIWM approach) to help them learn accurate physics despite their limited size.
+    -> arxiv_enhancing_physical_consistency_i / Abstract: "A major challenge in deploying world models is the trade-off between size and pe..."
+    note: The evidence states that small world models struggle to learn accurate physics and proposes the PIWM approach to address this challenge, but it does not explicitly confirm that small world models successfully stay accurate by incorporating these methods as an established fact (since the text cuts off introducing the proposed model).
+
+🟢 [supported] Compared to large world models, small world models give up the ability to easily capture rich physical dynamics, often struggling to learn accurate physics and leading to poor predictions.
+    -> arxiv_enhancing_physical_consistency_i / Abstract: "A major challenge in deploying world models is the trade-off between size and pe..."
+    note: The evidence directly states that small world models often struggle to learn accurate physics and lead to poor predictions, matching the claim.
+
+Claims: 2 | Supported: 1 | Citation precision: 50%
+
+[trace bad6b48ff63d] 4816ms | 4 llm calls | 2327 tokens
+
+## Gold set: 8 answerable (synthetic, chunk-seeded) + 3 unanswerable
+
+  [arxiv_network_efficient_world_model_to_c0] What are the structural dimensions, codebook capacity, and spatial compression factor of the discrete token representation produced by the stride-16 VQ-U-Net tokenizer for driving frames?
+      keywords: ['token', 'grid', 'codebook', 'stride']
+  [arxiv_distilling_game_code_world_model_c0] How can compact artificial intelligence models be adapted to convert textual game mechanics into executable Python simulations suitable for tree search algorithms?
+      keywords: ['game', 'code', 'model', 'python']
+  [arxiv_emotion_conditioned_short_horizo_c0] How can affect-derived features from faces enhance near-future human skeleton motion prediction in reactive technologies?
+      keywords: ['pose', 'emotion', 'prediction', 'facial']
+  [arxiv_learning_task_sufficient_world_m_c0] Why do traditional imagination-based decision-making methods suffer from limited efficiency and poor task generalization?
+      keywords: ['latent', 'embedding', 'irrelevant', 'control']
+  [arxiv_mixture_of_world_models_scaling__c0] Why do traditional single-architecture predictive models fail to effectively learn across highly varied visual environments in multi-task reinforcement learning?
+      keywords: ['heterogeneity', 'dynamics', 'monolithic', 'visual']
+  [arxiv_tasksense_focusing_on_what_matte_c0] Why do traditional visual control world models fail to efficiently allocate their latent capacity to goal-directed regions?
+      keywords: ['world', 'model', 'reconstruct', 'latent']
+  [arxiv_r2_dreamer_redundancy_reduced_wo_c0] How do image-based model-based reinforcement learning approaches address the trade-off between reconstructing irrelevant background details and utilizing data augmentation for representation learning?
+      keywords: ['representation', 'reconstruction', 'augmentation', 'model-based']
+  [arxiv_discrete_world_models_via_regula_c0] What mechanisms do current methods employ to maintain the informativeness of latent representations in world models?
+      keywords: ['latent', 'reconstruction', 'contrastive', 'informative']
+  [none] What exact learning rate and batch size were used during the training of the Next-Latent Prediction Transformers for compact world model learning?
+  [none] How many total GPU hours and what specific hardware configuration were required to train HarmonyDream for task harmonization?
+  [none] What are the precise per-benchmark success rate percentages achieved by DreamPolicy compared to baseline models on the humanoid locomotion tasks?
+
+## Retrieval eval (Recall@K, MRR)
+
+mode          | recall@1 | recall@3 | recall@5 | mrr 
+-----------------------------------------------------
+bm25          | 0.75     | 0.75     | 0.75     | 0.75
+dense         | 0.88     | 1.00     | 1.00     | 0.94
+hybrid        | 0.75     | 0.88     | 0.88     | 0.79
+hybrid+rerank | 0.88     | 1.00     | 1.00     | 0.94
+
+## Citation eval (claim-level)
+
+mode          | citation_precision | citation_completeness | unsupported_rate
+-----------------------------------------------------------------------------
+bm25          | 0.76               | 1.00                  | 0.00            
+hybrid        | 0.76               | 1.00                  | 0.00            
+hybrid+rerank | 0.77               | 1.00                  | 0.00            
+
+## Naive LLM (no retrieval) vs RAG
+
+condition                | keyword_recall | citation_availability | hallucination_rate
+--------------------------------------------------------------------------------------
+naive_llm (no retrieval) | 0.69           | 0.00                  | 0.00              
+hybrid_rag               | 0.81           | 1.00                  | 0.33              
+hybrid_rag+rerank        | 0.88           | 1.00                  | 0.67              
+
+## Observability (this run)
+
+investigations: 47 | llm calls: 172 | tokens: 77715 | avg latency: 27475ms
