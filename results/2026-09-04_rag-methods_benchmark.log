@@ -1,0 +1,148 @@
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+# Topic: RAG methods and evaluation  (rag-methods)
+llm: GeminiProvider(gemini-3.5-flash-lite) | embeddings: GeminiEmbeddingProvider(gemini-embedding-001) | reranker: GeminiReranker | sections: ['baseline', 'citation', 'headline', 'retrieval']
+
+## Corpus: 20 arXiv papers, 84 chunks (abstracts, 2025-2026)
+
+  2026  arxiv_age_adaptive_masking_for_graph_e     4c  AGE: Adaptive-masking for Graph Embedding in Graph Retrieval-Augme
+  2026  arxiv_feedback_adaptation_for_retrieva     4c  Feedback Adaptation for Retrieval-Augmented Generation
+  2026  arxiv_sifei_at_semeval_2026_task_8_hyb     3c  Sifei at SemEval-2026 Task 8: Hybrid Retrieval and Query Rewriting
+  2026  arxiv_evaluating_chunking_strategies_f     2c  Evaluating Chunking Strategies for Retrieval-Augmented Generation 
+  2026  arxiv_hypothesis_conditioned_query_rew     5c  Hypothesis-Conditioned Query Rewriting for Decision-Useful Retriev
+  2026  arxiv_the_effect_of_text_chunk_size_on     5c  The Effect of Text Chunk Size on Retrieval-Augmented Generation Pe
+  2026  arxiv_rethinking_evaluation_for_llm_ha     6c  Rethinking Evaluation for LLM Hallucination Detection: A Desiderat
+  2026  arxiv_generating_leakage_free_benchmar     4c  Generating Leakage-Free Benchmarks for Robust RAG Evaluation
+  2026  arxiv_mitigating_hallucination_on_hall     4c  Mitigating Hallucination on Hallucination in RAG via Ensemble Voti
+  2025  arxiv_a_survey_of_multimodal_retrieval     4c  A Survey of Multimodal Retrieval-Augmented Generation
+  2025  arxiv_a_survey_on_knowledge_oriented_r     5c  A Survey on Knowledge-Oriented Retrieval-Augmented Generation
+  2025  arxiv_agentic_retrieval_augmented_gene     6c  Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG
+  2025  arxiv_ask_in_any_modality_a_comprehens     4c  Ask in Any Modality: A Comprehensive Survey on Multimodal Retrieva
+  2025  arxiv_mao_arag_multi_agent_orchestrati     5c  MAO-ARAG: Multi-Agent Orchestration for Adaptive Retrieval-Augment
+  2025  arxiv_annotation_free_reinforcement_le     3c  Annotation-Free Reinforcement Learning Query Rewriting via Verifia
+  2025  arxiv_hallucinations_and_truth_a_compr     6c  Hallucinations and Truth: A Comprehensive Accuracy Evaluation of R
+  2025  arxiv_removal_of_hallucination_on_hall     3c  Removal of Hallucination on Hallucination: Debate-Augmented RAG
+  2025  arxiv_garage_a_benchmark_with_groundin     4c  GaRAGe: A Benchmark with Grounding Annotations for RAG Evaluation
+  2025  arxiv_generating_diverse_q_a_benchmark     5c  Generating Diverse Q&A Benchmarks for RAG Evaluation with DataMorg
+  2025  arxiv_real_time_evaluation_models_for_     2c  Real-Time Evaluation Models for RAG: Who Detects Hallucinations Be
+
+## Headline investigation
+
+# Investigation: What retrieval-augmented generation methods reduce hallucination, and how is RAG quality actually evaluated?
+
+🟢 [supported] Retrieval-Augmented Generation (RAG) aims to reduce hallucinations in Large Language Models (LLMs) by integrating external knowledge.
+    -> arxiv_mitigating_hallucination_on_hall / Abstract: "Retrieval-Augmented Generation (RAG) aims to reduce hallucinations in Large Lang..."
+    note: The evidence explicitly states that RAG aims to reduce hallucinations in LLMs by integrating external knowledge, which directly matches the claim word-for-word.
+
+🟡 [partial] Methods and architectures that help address hallucination issues and improve response accuracy include VOTE-RAG (a training-free framework), single-round RAG, iterative RAG, and reasoning RAG.
+    -> arxiv_mitigating_hallucination_on_hall / Abstract: "Retrieval-Augmented Generation (RAG) aims to reduce hallucinations in Large Lang..."
+    -> arxiv_mao_arag_multi_agent_orchestrati / Abstract: "In question-answering (QA) systems, Retrieval-Augmented Generation (RAG) has bec..."
+    note: The evidence supports VOTE-RAG as a training-free framework that addresses hallucination issues, but it does not mention single-round RAG, iterative RAG, or reasoning RAG.
+
+🟡 [partial] RAG quality and hallucinations are evaluated using evaluation models and benchmarks such as LLM-as-a-Judge, Prometheus, Lynx, the Hughes Hallucination Evaluation Model (HHEM), the Trustworthy Language Model (TLM), and the Retrieval Augmented Generation Assessment (RAGA).
+    -> arxiv_real_time_evaluation_models_for_ / Abstract: "This article surveys Evaluation models to automatically detect hallucinations in..."
+    -> arxiv_evaluating_chunking_strategies_f / Abstract: "Retrieval-Augmented Generation (RAG) systems use the question-answering capabili..."
+    note: The evidence supports most of the evaluation models and the general context of evaluating RAG quality and hallucinations, but it does not mention the 'Retrieval Augmented Generation Assessment (RAGA)' benchmark or explicitly use the word 'benchmarks'.
+
+Claims: 3 | Supported: 1 | Citation precision: 33%
+
+[trace 6179477e46e4] 207444ms | 5 llm calls | 2737 tokens
+
+## Gold set: 8 answerable (synthetic, chunk-seeded) + 3 unanswerable
+
+  [arxiv_age_adaptive_masking_for_graph_e_c0] What core challenge arises when utilizing graph-structured knowledge to assist frozen large language models in retrieval-augmented generation?
+      keywords: ['graph', 'misalign', 'latent', 'retrieval']
+  [arxiv_feedback_adaptation_for_retrieva_c0] How do current assessment frameworks fall short regarding knowledge-retrieval models that incorporate expert corrections during real-world usage?
+      keywords: ['feedback', 'retrieval', 'evaluation', 'adaptation']
+  [arxiv_sifei_at_semeval_2026_task_8_hyb_c0] What training-free conversational retrieval framework did the Sifei team deploy for SemEval-2026 Task 8, and what nDCG@5 score did it reach on the Task A evaluation benchmark?
+      keywords: ['sifei', 'semeval', 'ndcg', 'retrieval']
+  [arxiv_evaluating_chunking_strategies_f_c0] Does semantic chunking based on clustering enhance the accuracy of information retrieval and response generation relative to traditional recursive and fixed-length segmentation methods when applied to lengthy, formalized scholarly dissertations?
+      keywords: ['cluster', 'chunk', 'rag', 'academic']
+  [arxiv_hypothesis_conditioned_query_rew_c0] Why do traditional retrieval-augmented generation techniques utilizing a sole initial query fail to facilitate final choices when tasks involve selecting between rival alternatives?
+      keywords: ['retrieval', 'query', 'decision']
+  [arxiv_the_effect_of_text_chunk_size_on_c0] How does the segmentation granularity of source documents impact the generation performance of RAG systems?
+      keywords: ['chunk', 'size', 'granularity']
+  [arxiv_rethinking_evaluation_for_llm_ha_c0] What foundational criteria and new evaluation resources are introduced in this study to assess the performance of systems designed to identify unfaithful or fabricated outputs from generative language models?
+      keywords: ['hallucination', 'detect', 'benchmark', 'desiderata']
+  [arxiv_generating_leakage_free_benchmar_c0] What phenomenon occurs when assessment tasks designed for external knowledge augmentation can actually be resolved using a language model's internal parameters, thereby compromising the evaluation?
+      keywords: ['leakage', 'parametric', 'memory']
+  [none] What was the exact batch size and learning rate used during the reinforcement learning training phase in the paper 'Annotation-Free Reinforcement Learning Query Rewriting via Verifiable Search Reward'?
+  [none] How many total GPU hours were consumed to evaluate the ensemble voting method in 'Mitigating Hallucination on Hallucination in RAG via Ensemble Voting'?
+  [none] What are the exact exact token-level F1-scores achieved by each individual model on the DataMorgana benchmark as reported in 'Generating Diverse Q&A Benchmarks for RAG Evaluation with DataMorgana'?
+
+## Retrieval eval (Recall@K, MRR)
+
+mode          | recall@1 | recall@3 | recall@5 | mrr 
+-----------------------------------------------------
+bm25          | 0.88     | 0.88     | 0.88     | 0.88
+dense         | 1.00     | 1.00     | 1.00     | 1.00
+hybrid        | 0.88     | 0.88     | 0.88     | 0.88
+hybrid+rerank | 1.00     | 1.00     | 1.00     | 1.00
+
+## Citation eval (claim-level)
+
+Traceback (most recent call last):
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/run_topic_eval.py", line 145, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/run_topic_eval.py", line 113, in main
+    **evaluate_citations(answerable, sources, provider, retrievers[mode])})
+      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/eval/citation_eval.py", line 22, in evaluate_citations
+    claims = run_investigation(
+        q.question, sources, provider, retriever, k=k, reranker=reranker
+    )
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/pipeline.py", line 60, in run_investigation
+    state, note = provider.verify_claim(claim.text, evidence[0].text, trace=trace)
+                  ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/llm.py", line 166, in verify_claim
+    text = self._generate(prompt, trace, "llm.verify_claim")
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/llm.py", line 141, in _generate
+    return gemini_generate(self.client, self.model, prompt, trace, span_name)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/llm.py", line 38, in gemini_generate
+    resp = _call_generate(client, model, prompt)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/llm.py", line 31, in _call_generate
+    return call_with_backoff(lambda: client.models.generate_content(model=model, contents=prompt))
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/rate_limit.py", line 61, in call_with_backoff
+    return fn()
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/citefyme/llm.py", line 31, in <lambda>
+    return call_with_backoff(lambda: client.models.generate_content(model=model, contents=prompt))
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/models.py", line 6270, in generate_content
+    response = self._generate_content(
+        model=model, contents=contents, config=parsed_config_to_call
+    )
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/models.py", line 4707, in _generate_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/_api_client.py", line 1747, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/_api_client.py", line 1534, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/tenacity/__init__.py", line 470, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/tenacity/__init__.py", line 371, in iter
+    result = action(retry_state)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/tenacity/__init__.py", line 473, in __call__
+    result = fn(*args, **kwargs)
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/_api_client.py", line 1511, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/errors.py", line 173, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/swapneelpremchand/Ideas/CitefyMe/.venv/lib/python3.14/site-packages/google/genai/errors.py", line 204, in raise_error
+    raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}

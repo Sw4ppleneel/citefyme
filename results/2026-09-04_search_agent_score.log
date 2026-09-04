@@ -1,0 +1,21 @@
+## Per-question
+
+q   | type         | keyword_recall | hit                                       | cited
+---------------------------------------------------------------------------------------
+Q1  | answerable   | 1.00           | graph,misalign,latent,retrieval           | yes  
+Q2  | answerable   | 1.00           | feedback,retrieval,evaluation,adaptation  | yes  
+Q3  | answerable   | 1.00           | sifei,semeval,ndcg,retrieval              | yes  
+Q4  | answerable   | 1.00           | cluster,chunk,rag,academic                | yes  
+Q5  | answerable   | 1.00           | retrieval,query,decision                  | yes  
+Q6  | answerable   | 1.00           | chunk,size,granularity                    | yes  
+Q7  | answerable   | 1.00           | hallucination,detect,benchmark,desiderata | yes  
+Q8  | answerable   | 1.00           | leakage,parametric,memory                 | yes  
+Q9  | unanswerable | -              | abstained                                 | yes  
+Q10 | unanswerable | -              | abstained                                 | yes  
+Q11 | unanswerable | -              | abstained                                 | yes  
+
+## Arm summary
+
+condition         | keyword_recall | citation_availability | hallucination_rate
+-------------------------------------------------------------------------------
+web_search_agents | 1.00           | 1.00                  | 0.00              
