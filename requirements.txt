@@ -1,0 +1,7 @@
+pydantic>=2
+rank_bm25
+numpy
+google-genai
+python-dotenv
+fastapi
+uvicorn[standard]
