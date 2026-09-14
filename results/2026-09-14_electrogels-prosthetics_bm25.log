@@ -1,0 +1,72 @@
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+# Topic: Electrogels (conductive hydrogels) in prosthetics  (electrogels-prosthetics)
+llm: GeminiProvider(gemini-3.5-flash-lite) | embeddings: GeminiEmbeddingProvider(gemini-embedding-001) | reranker: GeminiReranker | sections: ['baseline', 'citation', 'headline', 'retrieval']
+note: arXiv has essentially no materials-chemistry papers literally branded 'electrogel' — that literature lives in journals like Advanced Materials / RSC, not arXiv. This is the closest real cluster arXiv has: conductive-hydrogel-based e-skin/tactile sensing (the prosthetics-relevant application of the material) plus a general robotic-prosthetics survey for domain context.
+
+## Corpus: 4 arXiv papers, 561 chunks (full text, 2024-2025)
+
+  2024  arxiv_full_a_survey_on_robotic_prostheti   315c  A Survey on Robotic Prosthetics: Neuroprosthetics, Soft Actuators,
+  2025  arxiv_full_multi_touch_and_bending_sensi   101c  Multi-Touch and Bending Sensing Using Electrical Impedance Tomogra
+  2025  arxiv_full_learning_enhanced_electronic_   95c  Learning-enhanced electronic skin for tactile sensing on deformabl
+  2025  arxiv_full_a_highly_sensitive_self_adhes   50c  A highly sensitive, self-adhesive, biocompatible DLP 3D printed or
+
+## Headline investigation  (retriever: bm25)
+
+# Investigation: How are conductive hydrogels ('electrogels') used in prosthetic and robotic tactile sensing, and what do they trade off against other e-skin materials?
+
+🟢 [supported] Hydrogels are used as materials for triboelectric sensors in e-skins [arxiv_full_a_survey_on_robotic_prosthetics__c273].
+    -> arxiv_full_a_survey_on_robotic_prosthetics_ / eSkin: "c pressure sensing, as the output of these sensors depends both on the magnitude..."
+    note: The evidence explicitly states that hydrogels are used as materials for triboelectric sensors.
+
+🟢 [supported] Hydrogel-based EIT e-skins are used in various deformation scenarios to underpin enhanced tactile interaction in soft and highly deformable robotic applications [arxiv_full_learning_enhanced_electronic_ski_c6].
+    -> arxiv_full_learning_enhanced_electronic_ski / preamble: ") and low relative image errors (0.0107 - 0.0805). Experimental validations, usi..."
+    note: The evidence explicitly states that experimental validations using a hydrogel-based EIT e-skin under various deformation scenarios demonstrated the effectiveness of the approach, and that these findings could underpin enhanced tactile interaction in soft and highly deformable robotic applications, which directly supports the claim.
+
+🟢 [supported] Ionic crosslinked hydrogels utilize electrostatic interactions and offer tunability and low toxicity [arxiv_full_a_highly_sensitive_self_adhesive_c16].
+    -> arxiv_full_a_highly_sensitive_self_adhesive / Introduction: " widely used in soft electronics, sensors, and tissue engineering, but its compl..."
+    note: The evidence explicitly states that ionic crosslinked hydrogels utilize electrostatic interactions, offer tunability, and have low toxicity.
+
+🟢 [supported] Complex synthesis processes for certain hydrogels require precise control to prevent excessive crosslinking-induced brittleness [arxiv_full_a_highly_sensitive_self_adhesive_c16].
+    -> arxiv_full_a_highly_sensitive_self_adhesive / Introduction: " widely used in soft electronics, sensors, and tissue engineering, but its compl..."
+    note: The evidence explicitly states that the complex synthesis process of hydrogels requires precise control to prevent excessive crosslinking-induced brittleness.
+
+Claims: 4 | Supported: 4 | Citation precision: 100%
+
+[trace 1126ba396ef8] 6006ms | 6 llm calls | 3079 tokens
+
+## Gold set: 4 answerable (synthetic, chunk-seeded) + 3 unanswerable
+
+  [arxiv_full_a_survey_on_robotic_prosthetics__c7] How have recent advancements in robotic technology impacted the medical field and the execution of human tasks over the past several decades?
+      keywords: ['robot', 'medic', 'task']
+  [arxiv_full_multi_touch_and_bending_sensing__c10] What has been the primary application focus of robotic tactile sensing research due to the practical constraint of requiring only limited areas of electronic skin?
+      keywords: ['tactile', 'manipulation', 'fingers', 'hands']
+  [arxiv_full_learning_enhanced_electronic_ski_c8] What biological system serves as the primary inspiration for the development of robotic electronic skins?
+      keywords: ['human', 'skin', 'electronic', 'skin']
+  [arxiv_full_a_highly_sensitive_self_adhesive_c4] What technological limitations currently hinder the practical application of conventional soft polymeric networks intended for flexible physiological tracking?
+      keywords: ['hydrogel', 'stability', 'adhesion', 'biocompatib']
+  [none] What were the exact learning rate and batch size hyperparameters used during the training of the neural network in the learning-enhanced electronic skin paper?
+  [none] How many total GPU hours were required to train the machine learning models presented in the electrical impedance tomography tactile sensing study?
+  [none] What is the exact percentage improvement in tactile sensitivity on deformable surfaces achieved by the proposed organohydrogel sensor compared to the baseline DLP 3D printed materials on the standard benchmark dataset?
+
+## Retrieval eval (Recall@K, MRR)
+
+mode | recall@1 | recall@3 | recall@5 | mrr 
+--------------------------------------------
+bm25 | 0.50     | 0.50     | 0.50     | 0.50
+
+## Citation eval (claim-level)
+
+mode | citation_precision | citation_completeness | unsupported_rate
+--------------------------------------------------------------------
+bm25 | 0.71               | 1.00                  | 0.00            
+
+## Naive LLM (no retrieval) vs RAG  (retriever: bm25)
+
+condition                | keyword_recall | citation_availability | hallucination_rate
+--------------------------------------------------------------------------------------
+naive_llm (no retrieval) | 0.69           | 0.00                  | 0.00              
+bm25_rag                 | 0.69           | 1.00                  | 0.67              
+
+## Observability (this run)
+
+investigations: 12 | llm calls: 35 | tokens: 14328 | avg latency: 10652ms
