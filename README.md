@@ -43,9 +43,12 @@ cp .env.example .env   # paste in GEMINI_API_KEY (optional — see below)
 ```bash
 .venv/bin/python demo.py hybrid                       # or: bm25 / dense
 .venv/bin/python run_evals.py                         # 4 hand-written sample papers
-.venv/bin/python run_topic_eval.py tiny-world-models  # 20 real arXiv papers
+.venv/bin/python run_topic_eval.py tiny-world-models  # 20 real arXiv papers (abstracts)
 .venv/bin/python run_topic_eval.py rag-methods
+.venv/bin/python run_topic_eval.py electrogels-prosthetics  # whole papers, not abstracts
 ```
+
+`electrogels-prosthetics` is a full-text topic (`Topic.fulltext=True` in `citefyme/topics.py`): instead of the query-driven abstract search the other topics use, `citefyme/fulltext.py` ingests the *whole* paper — arXiv's HTML5 rendering where one exists, falling back to `pypdf` text extraction from the PDF otherwise — for a curated list of arXiv ids, so retrieval and citation checking run against real paper sections (Methods, Results, ...) instead of a two-sentence abstract.
 
 ### Notebook UI (two processes)
 
@@ -70,6 +73,8 @@ Numbers below are from `run_topic_eval.py` against two real 20-paper arXiv corpo
 - **The 4-paper toy corpus hid this** — every mode scored 0.92–1.00 there, which can only tell you the code runs, not which retriever is better.
 - **Retrieval makes the system more confidently wrong on unanswerable questions.** A no-retrieval baseline abstains far more often than the RAG path, which reliably finds *something* topically nearby and marks a claim `supported`. Citation coverage goes to 1.00, but "every claim has a citation" isn't "the system knows when to shut up" — abstention is a missing feature, not a tuning problem.
 - **`unsupported_rate` is ~0.00 everywhere.** The verifier splits between `supported` and `partial` and has essentially never vetoed a claim outright — as a filter it currently downgrades, it doesn't reject.
+
+A third topic, `electrogels-prosthetics`, ingests **whole papers** instead of abstracts (`citefyme/fulltext.py`) — arXiv's HTML rendering where one exists, `pypdf` extraction from the PDF otherwise. That run surfaced two real bugs invisible at abstract scale (an embedding-API batch-size cap, and gold-set seeding that picked front matter over content) and hit the embedding daily quota before dense/hybrid could run — see [`STACK.md`](./STACK.md#full-text-ingestion-2026-09-14-electrogels-prosthetics) for the fixes and the BM25-only numbers that did complete.
 
 Full methodology, a second benchmark run comparing against web-search agents, and the operational issues hit along the way (Gemini free-tier daily/per-minute caps, a `503` that escaped retry handling) are in [`STACK.md`](./STACK.md).
 

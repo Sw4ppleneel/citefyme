@@ -230,12 +230,89 @@ now retries 5xx with the same backoff. Sustained overload on one model still
 needs `GEMINI_MODEL` switched, which is how the citation/baseline sections
 above were finally completed.
 
+## Full-text ingestion, 2026-09-14: `electrogels-prosthetics`
+
+First run against whole papers instead of abstracts (`citefyme/fulltext.py`,
+`Topic.fulltext=True`). arXiv's HTML5 rendering (LaTeXML, at
+`arxiv.org/html/<id>`) is parsed for 3 of the 4 papers; the fourth has no
+HTML rendering and falls back to `pypdf` text extraction from the PDF.
+Corpus: 4 papers, 561 chunks (vs. ~20-84 chunks for 20 *abstracts* in the
+other topics — one full paper chunks to roughly the size of a whole abstract
+corpus). Log: `results/2026-09-14_electrogels-prosthetics_bm25.log`.
+
+**Topic note:** arXiv has essentially no materials-chemistry papers literally
+branded "electrogel" — that literature (ionically/PEDOT/MXene-conductive
+hydrogels) lives in journals like *Advanced Materials* and RSC, not arXiv.
+The corpus is the closest real cluster arXiv has: conductive-hydrogel-based
+e-skin/tactile-sensing papers (the prosthetics-relevant application of the
+material) plus a general robotic-prosthetics survey for domain context. Same
+situation as `tiny-world-models`'s search-term note — arXiv coverage, not the
+pipeline, is the constraint.
+
+**Two real bugs this run found, both in code that had never seen a
+full-text-sized corpus before:**
+
+1. **`BatchEmbedContentsRequest` hard-caps at 100 items/call**, and
+   `GeminiEmbeddingProvider.embed` was sending the whole corpus (561 texts)
+   in one call. Abstract corpora topped out at 84 chunks and never hit it.
+   Fixed by batching into groups of 90 (`citefyme/embeddings.py`).
+2. **Gold-set seeding picked front matter, not content.** `_seed_chunks`
+   chose "the longest chunk per source" as the most-substantive passage to
+   seed a question from — true for a single-chunk abstract, false for a
+   561-chunk paper. The HTML extractor was also treating the paper's `<h1>`
+   title as a section heading, so every author/affiliation/DOI block got
+   bucketed into a fake section named after the paper's own title; being
+   dense unbroken text, it reliably won "longest chunk." First run's "gold"
+   questions were things like *"At which academic institution... are Haofeng
+   Chen, Bedrich Himmel, and Matej Hoffmann employed?"* — a real, exactly-
+   labelled question, just not one that tests whether retrieval finds
+   *hydrogel content*. Fixed two ways: `<h1>` is no longer treated as a
+   heading boundary (front matter now buckets into `preamble`, matching the
+   PDF-extraction path), and `_seed_chunks` excludes `preamble` from
+   candidates. Re-running after the fix produced genuinely content-seeded
+   questions (*"What technological limitations currently hinder... flexible
+   physiological tracking?"*).
+
+**BM25 results** (dense/hybrid blocked — see below):
+
+| mode | recall@1 | recall@3 | recall@5 | mrr |
+|---|---|---|---|---|
+| bm25 | 0.50 | 0.50 | 0.50 | 0.50 |
+
+| condition | keyword_recall | citation_availability | hallucination_rate |
+|---|---|---|---|
+| naive LLM, no retrieval | 0.69 | 0.00 | 0.00 |
+| bm25 RAG | 0.69 | 1.00 | 0.67 |
+
+Citation precision 0.71, completeness 1.00, unsupported_rate 0.00 — same
+downgrade-not-veto pattern as the abstract-only corpora. Recall@1 of 0.50 on
+4 answerable questions (n=4, so read this as a data point, not a stable
+number) is the weakest BM25 score of any corpus run so far, consistent with
+finding 1 from the earlier abstracts-only run: BM25 is the retriever most
+exposed by paraphrased, non-lexically-matching questions, and full papers
+give the gold-set generator far more paraphrase room than a two-sentence
+abstract does.
+
+**What's missing and why:** dense and hybrid modes are blocked by the Gemini
+free tier's `EmbedContentRequestsPerDayPerProjectPerModel` cap (1000
+items/day) — embedding 561 chunks twice (once before the seeding fix, once
+after `--refresh-corpus`) burned the day's allowance before a third attempt
+could complete. Unlike the per-minute cap, this doesn't clear by waiting a
+few minutes, and this account has no working alternate embedding model to
+switch to (`text-embedding-004` and `embedding-001` both 404 on this API
+version — the `GEMINI_MODEL`-switch workaround documented above is for the
+*generation* quota, which is a separate, model-swappable metric; the free
+tier effectively offers one embedding model). `run_topic_eval.py` now takes
+`--modes` (mirrors `--sections`) so a mode list can be run standalone once
+the daily quota resets:
+`run_topic_eval.py electrogels-prosthetics --modes dense,hybrid --sections retrieval,citation,baseline`.
+
 ## Explicitly out of scope for this build
 
 Evidence graph / contradiction detection, citation-state ⚫ (conflicting),
 research planner / subquestion decomposition, cross-encoder reranker model,
-full-text (PDF/HTML) ingestion, non-arXiv sources (Semantic Scholar/web),
-and the "research gaps" feature from the full CitefyMe spec. The architecture
+non-arXiv sources (Semantic Scholar/web), and the "research gaps" feature
+from the full CitefyMe spec. The architecture
 (provider seams, `Source → Chunk → Evidence → Claim` model, deterministic
 pipeline) was built so all of those bolt on without rewrites — but none of
 them exist yet.
