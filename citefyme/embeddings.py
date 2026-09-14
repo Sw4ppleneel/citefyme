@@ -7,6 +7,10 @@ from citefyme.observability import Trace
 from citefyme.rate_limit import call_with_backoff, embed_limiter
 
 DEFAULT_GEMINI_EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+# BatchEmbedContentsRequest hard-rejects over 100 items in one call; matches
+# embed_limiter's per-minute headroom so a single batch never straddles a
+# throttle wait.
+_MAX_BATCH_ITEMS = 90
 
 
 class EmbeddingProvider(ABC):
@@ -23,18 +27,24 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         self.model = model
 
     def embed(self, texts: list[str], trace: Trace | None = None) -> np.ndarray:
-        def call():
-            embed_limiter.acquire(len(texts))
+        def call_batch(batch: list[str]):
+            embed_limiter.acquire(len(batch))
             return call_with_backoff(
-                lambda: self.client.models.embed_content(model=self.model, contents=texts)
+                lambda: self.client.models.embed_content(model=self.model, contents=batch)
             )
 
+        batches = [
+            texts[i : i + _MAX_BATCH_ITEMS] for i in range(0, len(texts), _MAX_BATCH_ITEMS)
+        ]
+        embeddings = []
         if trace is None:
-            result = call()
+            for batch in batches:
+                embeddings.extend(call_batch(batch).embeddings)
         else:
             with trace.span("embed.gemini", model=self.model, n_texts=len(texts)):
-                result = call()
-        return np.array([e.values for e in result.embeddings], dtype=np.float32)
+                for batch in batches:
+                    embeddings.extend(call_batch(batch).embeddings)
+        return np.array([e.values for e in embeddings], dtype=np.float32)
 
 
 class HashEmbeddingProvider(EmbeddingProvider):

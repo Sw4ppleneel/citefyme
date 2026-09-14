@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 from citefyme.arxiv import fetch_corpus_multi
+from citefyme.fulltext import fetch_fulltext_corpus
 from citefyme.models import Source
 from citefyme.topics import TOPICS, Topic
 
@@ -38,11 +39,15 @@ def get_corpus(topic: Topic | str, refresh: bool = False) -> list[Source]:
         cached = load_corpus(topic.slug)
         if cached:
             return cached
-    sources = fetch_corpus_multi(
-        topic.queries,
-        per_query=topic.per_query,
-        exclude_terms=topic.exclude_terms,
-        limit=topic.limit,
-    )
+
+    if topic.fulltext:
+        sources = fetch_fulltext_corpus(topic.arxiv_ids)
+    else:
+        sources = fetch_corpus_multi(
+            topic.queries,
+            per_query=topic.per_query,
+            exclude_terms=topic.exclude_terms,
+            limit=topic.limit,
+        )
     save_corpus(topic.slug, sources)
     return sources

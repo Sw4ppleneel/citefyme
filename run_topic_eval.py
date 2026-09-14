@@ -40,6 +40,10 @@ def main():
     ap.add_argument("--sections", default="headline,retrieval,citation,baseline",
                     help="comma-separated subset to run, so a section lost to a quota "
                          "cap can be re-run on its own")
+    ap.add_argument("--modes", default="bm25,dense,hybrid",
+                    help="comma-separated retrieval modes to build — drop dense/hybrid "
+                         "to run entirely off the embed quota when it's exhausted "
+                         "(bm25 needs no API calls at all)")
     args = ap.parse_args()
     sections = {s.strip() for s in args.sections.split(",")}
 
@@ -57,23 +61,35 @@ def main():
 
     sources = get_corpus(topic, refresh=args.refresh_corpus)
     n_chunks = sum(len(s.chunks) for s in sources)
+    kind = "full text" if topic.fulltext else "abstracts"
     print(f"\n## Corpus: {len(sources)} arXiv papers, {n_chunks} chunks "
-          f"(abstracts, {min(s.year for s in sources)}-{max(s.year for s in sources)})\n")
+          f"({kind}, {min(s.year for s in sources)}-{max(s.year for s in sources)})\n")
     for s in sources:
         print(f"  {s.year}  {s.source_id[:40]:42} {len(s.chunks)}c  {s.title[:66]}")
 
     trace_offset = trace_count()
 
-    retrievers = {"bm25": build_retriever("bm25", sources)}
-    retrievers["dense"] = build_retriever("dense", sources, embedder)
-    # reuse the already-embedded corpus rather than paying for it twice
-    retrievers["hybrid"] = build_retriever("hybrid", sources, dense=retrievers["dense"])
+    modes = [m.strip() for m in args.modes.split(",") if m.strip()]
+    retrievers = {}
+    if "bm25" in modes:
+        retrievers["bm25"] = build_retriever("bm25", sources)
+    if "dense" in modes:
+        retrievers["dense"] = build_retriever("dense", sources, embedder)
+    if "hybrid" in modes:
+        # reuse an already-embedded dense retriever rather than paying for it twice
+        retrievers["hybrid"] = build_retriever("hybrid", sources, embedder, dense=retrievers.get("dense"))
+    if not retrievers:
+        raise ValueError(f"--modes matched nothing (got {args.modes!r})")
+    # richest available mode drives the headline investigation and the single
+    # "RAG" condition in the baseline section
+    primary_mode = next(m for m in ("hybrid", "dense", "bm25") if m in retrievers)
+    primary = retrievers[primary_mode]
 
     if "headline" in sections:
-        print(f"\n## Headline investigation\n")
+        print(f"\n## Headline investigation  (retriever: {primary_mode})\n")
         trace = Trace(name=f"topic:{topic.slug}")
         claims = run_investigation(
-            topic.question, sources, provider, retrievers["hybrid"], reranker=reranker, trace=trace
+            topic.question, sources, provider, primary, reranker=reranker, trace=trace
         )
         print_report(topic.question, claims)
         print(f"\n[trace {trace.trace_id}] {trace.total_ms():.0f}ms | "
@@ -85,6 +101,7 @@ def main():
     answerable, unanswerable = get_goldset(
         topic.slug, sources, provider, n_answerable=args.questions,
         refresh=args.refresh_goldset,
+        content_desc="the full text" if topic.fulltext else "the abstracts",
     )
     print(f"\n## Gold set: {len(answerable)} answerable (synthetic, chunk-seeded) + "
           f"{len(unanswerable)} unanswerable\n")
@@ -99,37 +116,39 @@ def main():
         rows = []
         for mode, r in retrievers.items():
             rows.append({"mode": mode, **evaluate_retriever(r, answerable)})
-        rows.append({
-            "mode": "hybrid+rerank",
-            **evaluate_retriever(retrievers["hybrid"], answerable, reranker=reranker),
-        })
+        if "hybrid" in retrievers:
+            rows.append({
+                "mode": "hybrid+rerank",
+                **evaluate_retriever(retrievers["hybrid"], answerable, reranker=reranker),
+            })
         print_table(rows, ["mode", "recall@1", "recall@3", "recall@5", "mrr"])
 
     if "citation" in sections:
         print("\n## Citation eval (claim-level)\n")
         rows = []
-        for mode in ("bm25", "hybrid"):
+        for mode, r in retrievers.items():
             rows.append({"mode": mode,
-                         **evaluate_citations(answerable, sources, provider, retrievers[mode])})
-        rows.append({"mode": "hybrid+rerank",
-                     **evaluate_citations(answerable, sources, provider, retrievers["hybrid"],
-                                          reranker=reranker)})
+                         **evaluate_citations(answerable, sources, provider, r)})
+        if "hybrid" in retrievers:
+            rows.append({"mode": "hybrid+rerank",
+                         **evaluate_citations(answerable, sources, provider, retrievers["hybrid"],
+                                              reranker=reranker)})
         print_table(rows, ["mode", "citation_precision", "citation_completeness",
                            "unsupported_rate"])
 
     if "baseline" not in sections:
         return
-    print("\n## Naive LLM (no retrieval) vs RAG\n")
+    print(f"\n## Naive LLM (no retrieval) vs RAG  (retriever: {primary_mode})\n")
     rows = [
         {"condition": "naive_llm (no retrieval)",
          **evaluate_baseline(provider, answerable, unanswerable)},
-        {"condition": "hybrid_rag",
-         **evaluate_rag_condition(answerable, unanswerable, sources, provider,
-                                  retrievers["hybrid"])},
-        {"condition": "hybrid_rag+rerank",
-         **evaluate_rag_condition(answerable, unanswerable, sources, provider,
-                                  retrievers["hybrid"], reranker=reranker)},
+        {"condition": f"{primary_mode}_rag",
+         **evaluate_rag_condition(answerable, unanswerable, sources, provider, primary)},
     ]
+    if "hybrid" in retrievers:
+        rows.append({"condition": "hybrid_rag+rerank",
+                     **evaluate_rag_condition(answerable, unanswerable, sources, provider,
+                                              retrievers["hybrid"], reranker=reranker)})
     print_table(rows, ["condition", "keyword_recall", "citation_availability", "hallucination_rate"])
 
     new_traces = read_traces_since(trace_offset)

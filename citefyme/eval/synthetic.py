@@ -38,13 +38,13 @@ Respond ONLY with JSON, no markdown fences:
 {{"question": "...", "keywords": ["...", "..."]}}"""
 
 _UNANSWERABLE_PROMPT = """These are the titles of every paper in a corpus. The corpus
-contains ONLY the abstracts of these papers, nothing else:
+contains ONLY {content_desc} of these papers, nothing else:
 
 {titles}
 
 Write {n} questions that this corpus genuinely CANNOT answer, but that sound like
-they should be answerable from it: ask for precise details abstracts never
-contain (exact hyperparameters, GPU hours, per-benchmark numbers, ablation
+they should be answerable from it: ask for precise details this content never
+contains (exact hyperparameters, GPU hours, per-benchmark numbers, ablation
 details, dataset sizes) about papers that ARE in the list.
 
 Respond ONLY with a JSON array of question strings, no markdown fences."""
@@ -56,10 +56,19 @@ def goldset_path(slug: str) -> Path:
 
 def _seed_chunks(sources: list[Source], n: int) -> list[Chunk]:
     """One chunk per source (the longest, i.e. most substantive), round-robin
-    across sources so no single paper dominates the question set."""
-    per_source = [
-        max(s.chunks, key=lambda c: len(c.text)) for s in sources if s.chunks
-    ]
+    across sources so no single paper dominates the question set.
+
+    Excludes the 'preamble' section (title/authors/affiliations/DOI
+    boilerplate on full-text sources) from consideration: it's dense enough
+    to often be the single longest chunk in a paper without containing any
+    content a question should be seeded from. Falls back to preamble only if
+    a source genuinely has nothing else."""
+    per_source = []
+    for s in sources:
+        if not s.chunks:
+            continue
+        candidates = [c for c in s.chunks if c.section.strip().lower() != "preamble"]
+        per_source.append(max(candidates or s.chunks, key=lambda c: len(c.text)))
     return per_source[:n]
 
 
@@ -68,6 +77,7 @@ def generate_goldset(
     provider: LLMProvider,
     n_answerable: int = 8,
     n_unanswerable: int = 3,
+    content_desc: str = "the abstracts",
 ) -> tuple[list[EvalQuestion], list[EvalQuestion]]:
     by_id = {s.source_id: s for s in sources}
 
@@ -89,7 +99,9 @@ def generate_goldset(
         )
 
     titles = "\n".join(f"- {s.title}" for s in sources)
-    raw = provider.complete(_UNANSWERABLE_PROMPT.format(titles=titles, n=n_unanswerable))
+    raw = provider.complete(
+        _UNANSWERABLE_PROMPT.format(titles=titles, n=n_unanswerable, content_desc=content_desc)
+    )
     questions = _extract_json(raw, "[", "]") or []
     unanswerable = [
         EvalQuestion(question=q.strip(), relevant_chunk_ids=[], answerable=False)
@@ -113,6 +125,7 @@ def get_goldset(
     n_answerable: int = 8,
     n_unanswerable: int = 3,
     refresh: bool = False,
+    content_desc: str = "the abstracts",
 ) -> tuple[list[EvalQuestion], list[EvalQuestion]]:
     path = goldset_path(slug)
     if path.exists() and not refresh:
@@ -123,7 +136,7 @@ def get_goldset(
         )
 
     answerable, unanswerable = generate_goldset(
-        sources, provider, n_answerable, n_unanswerable
+        sources, provider, n_answerable, n_unanswerable, content_desc
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
